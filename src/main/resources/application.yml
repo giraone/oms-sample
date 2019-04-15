@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.web: INFO
+
+management:
+  endpoint:
+    health:
+      # show details for health must be authenticated
+      show-details: when-authorized
+      roles: ADMIN
+
+spring:
+  #autoconfigure.exclude=org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration
+  servlet:
+    ## MULTIPART (MultipartProperties)
+    multipart:
+      # Enable multipart uploads
+      enabled: true
+      # Threshold after which files are written to disk.
+      file-size-threshold: 100KB
+      # Max filesystem size.
+      max-file-size: 200MB
+      # Max Request Size
+      max-request-size: 215MB
+
+# S3 Connection properties
+s3-properties:
+  log-configuration-on-startup: true
+  #endpoint-url: http://127.0.0.1:9000
+  endpoint-url: https://ezel8.fritz.box
+  access-key: minio
+  secret-key: miniosecret
+  client-region: default
+  bucket-name: bucket-01
+  path-style-access-enabled: true
+
+## Application Properties, e.g. storage implementation
+app-config:
+  storage:
+    log-configuration-on-startup: true
+    # Use S3 for PRODUCTION
+    storage-impl: s3
+    upload-dir: ./uploads
+
+
+# spring profile for cloud deployment (=cloud) - not used yet
+---
+spring:
+  profiles: cloud
