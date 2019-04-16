@@ -1,10 +1,17 @@
 ## Spring Boot File Upload / Download Rest API Example
 
-This is a Spring Boot sample application to show upload and download of files.
-For uploading there are two techniques:
+This is a Spring Boot sample application to show upload (with and without multipart) and download of files including
+tests with [Apache HTTP Components](https://hc.apache.org/).
 
-- classic HTTP multipart uploads
-- modern REST based PUT uploads
+The code also shows to storage technologies: one with S3 and one with file system storage.
+
+## S3 Setup
+
+The system was tested with *minio*. To run the code without changes, the following two buckets must exist:
+- `bucket-01` for the "production" code - see `src/main/resources/application.xml`
+- `bucket-unit-test` for the unit test code - `src/test/resources/application.xml`
+
+The default setup uses a locally install minio without SSL.
 
 ## CURL tests
 
@@ -13,15 +20,21 @@ curl -v -s http://localhost:8080/actuator/health
 curl -v -s -u user:user http://localhost:8080/actuator/health
 curl -v -s -u admin:admin http://localhost:8080/actuator/health
 
-curl -v -s -u user:user -o ferrari.jpg http://localhost:8080/files/ferrari.jpg
-curl -v -s -u user:user -o ferrari.jpg http://localhost:8080/files/ferrari.jpg?as-attachment=true
-curl -v -s -u user:user -o ferrari.jpg http://localhost:8080/files-async/ferrari.jpg
+# Upload PUT
+curl -v -s -X PUT -u user:user -H "Content-Type: image/jpeg" -d @src/test/resources/testfiles/image-01.jpg http://localhost:8080/files/image-01.jpg
 
-curl -v -s -X POST -u user:user -H "Content-Type: application/xml" -H "X-File-Name: pom.xml" -d @pom.xml http://localhost:8080/files
-curl -v -s -X POST -u user:user -H "Content-Type: application/xml" -d @pom.xml http://localhost:8080/files/pom.xml
-curl -v -s -X DELETE -u user:user http://localhost:8080/files/pom.xml
+# Multipart Upload
+curl -v -s -X POST -u user:user -F "file=@src/test/resources/testfiles/image-02.jpg" http://localhost:8080/mp-file
+curl -v -s -X POST -u user:user -F "files[]=@readme.md" -F "files[]=@pom.xml" http://localhost:8080/mp-files
 
-curl -v -s -X POST -u user:user -F "file=@readme.md" http://localhost:8080/mp-upload-file
+# Download
+curl -v -s -u user:user -o image-01-1.jpg http://localhost:8080/files/image-01.jpg
+curl -v -s -u user:user -o image-01-2.jpg http://localhost:8080/files/image-01.jpg?as-attachment=true
+curl -v -s -u user:user -o image-01-3.jpg http://localhost:8080/files-async/image-01.jpg
+
+# Delete
+curl -v -s -X DELETE -u user:user http://localhost:8080/files/image-01.jpg
+curl -v -s -X DELETE -u user:user http://localhost:8080/files/image-02.jpg
 ```
 
 ## Steps to Setup

@@ -1,47 +1,51 @@
 package com.giraone.oms.sample.controller;
 
-class UploadFileResponse {
+public class UploadFileResponse {
+
     private String fileName;
     private String fileDownloadUri;
     private String fileType;
     private long size;
 
-    UploadFileResponse(String fileName, String fileDownloadUri, String fileType, long size) {
+    public UploadFileResponse() {
+    }
+
+    public UploadFileResponse(String fileName, String fileDownloadUri, String fileType, long size) {
         this.fileName = fileName;
         this.fileDownloadUri = fileDownloadUri;
         this.fileType = fileType;
         this.size = size;
     }
 
-    String getFileName() {
+    public String getFileName() {
         return fileName;
     }
 
-    void setFileName(String fileName) {
+    public void setFileName(String fileName) {
         this.fileName = fileName;
     }
 
-    String getFileDownloadUri() {
+    public String getFileDownloadUri() {
         return fileDownloadUri;
     }
 
-    void setFileDownloadUri(String fileDownloadUri) {
+    public void setFileDownloadUri(String fileDownloadUri) {
         this.fileDownloadUri = fileDownloadUri;
     }
 
-    String getFileType() {
+    public String getFileType() {
         return fileType;
     }
 
-    void setFileType(String fileType) {
+    public void setFileType(String fileType) {
         this.fileType = fileType;
     }
 
-    long getSize() {
+    public long getSize() {
         return size;
     }
 
-    void setSize(long size) {
+    public void setSize(long size) {
         this.size = size;
     }
 }

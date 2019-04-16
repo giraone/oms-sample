@@ -1,6 +1,6 @@
 package com.giraone.oms.sample.service.filesystem;
 
-import com.giraone.oms.sample.config.StorageConfiguration;
+import com.giraone.oms.sample.config.FileSystemConfiguration;
 import com.giraone.oms.sample.service.PathNotFoundException;
 import com.giraone.oms.sample.service.StorageException;
 import com.giraone.oms.sample.service.StorageService;
@@ -19,14 +19,14 @@ import java.nio.file.StandardCopyOption;
 public class FileSystemStorageService implements StorageService {
 
     @Autowired
-    private StorageConfiguration storageConfiguration;
+    private FileSystemConfiguration fileSystemConfiguration;
 
     private Path fileStorageLocation;
 
     @PostConstruct
     private void initialize() {
 
-        this.fileStorageLocation = Paths.get(storageConfiguration.getUploadDir()).toAbsolutePath().normalize();
+        this.fileStorageLocation = Paths.get(fileSystemConfiguration.getStorageDirectory()).toAbsolutePath().normalize();
 
         try {
             Files.createDirectories(this.fileStorageLocation);

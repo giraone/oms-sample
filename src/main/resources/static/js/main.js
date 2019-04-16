@@ -51,7 +51,7 @@ function uploadSingleFileAsFormData(file) {
 
   var xhr = new XMLHttpRequest();
   xhr.withCredentials = true;
-  xhr.open("POST", "/mp-upload-file");
+  xhr.open("POST", "/mp-file");
 
   xhr.onload = function() {
     console.log(xhr.responseText);
@@ -78,7 +78,7 @@ function uploadMultipleFilesAsFormData(files) {
 
   var xhr = new XMLHttpRequest();
   xhr.withCredentials = true;
-  xhr.open("POST", "/mp-upload-multiple-files");
+  xhr.open("POST", "/mp-files");
 
   xhr.onload = function() {
     console.log(xhr.responseText);

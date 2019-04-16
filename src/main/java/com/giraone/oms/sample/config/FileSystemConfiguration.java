@@ -6,23 +6,29 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.file.Files;
 
 @Component
-@ConfigurationProperties(prefix = "app-config.storage", ignoreUnknownFields = false)
-public class StorageConfiguration {
+@ConfigurationProperties(prefix = "filesystem-properties", ignoreUnknownFields = false)
+public class FileSystemConfiguration {
 
-    private static final Logger logger = LoggerFactory.getLogger(StorageConfiguration.class);
-
-    public enum StorageImplEnum {
-        file, s3
-    }
+    private static final Logger logger = LoggerFactory.getLogger(FileSystemConfiguration.class);
 
     private boolean logConfigurationOnStartup = false;
-    private StorageImplEnum storageImpl = StorageImplEnum.s3;
+    private String storageDirectory = null;
 
     @PostConstruct
     private void initialize() {
 
+        if (this.storageDirectory == null) {
+            try {
+                this.storageDirectory = Files.createTempDirectory("").toFile().getAbsolutePath();
+            } catch (IOException e) {
+                e.printStackTrace();
+                this.storageDirectory = ".";
+            }
+        }
         if (this.logConfigurationOnStartup) {
             logger.info("{}", this);
         }
@@ -36,19 +42,19 @@ public class StorageConfiguration {
         this.logConfigurationOnStartup = logConfigurationOnStartup;
     }
 
-    public StorageImplEnum getStorageImpl() {
-        return storageImpl;
+    public String getStorageDirectory() {
+        return storageDirectory;
     }
 
-    public void setStorageImpl(StorageImplEnum storageImpl) {
-        this.storageImpl = storageImpl;
+    public void setStorageDirectory(String storageDirectory) {
+        this.storageDirectory = storageDirectory;
     }
 
     @Override
     public String toString() {
         return "StorageConfiguration{" +
                 "logConfigurationOnStartup=" + logConfigurationOnStartup +
-                ", storageImpl=" + storageImpl +
+                ", storageDirectory='" + storageDirectory + '\'' +
                 '}';
     }
 }

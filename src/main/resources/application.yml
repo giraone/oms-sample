@@ -4,6 +4,7 @@ server:
 logging:
   level:
     org.springframework.web: INFO
+    com.giraone.oms.sample: DEBUG
 
 management:
   endpoint:
@@ -29,8 +30,7 @@ spring:
 # S3 Connection properties
 s3-properties:
   log-configuration-on-startup: true
-  #endpoint-url: http://127.0.0.1:9000
-  endpoint-url: https://ezel8.fritz.box
+  endpoint-url: http://127.0.0.1:9000
   access-key: minio
   secret-key: miniosecret
   client-region: default
@@ -43,7 +43,6 @@ app-config:
     log-configuration-on-startup: true
     # Use S3 for PRODUCTION
     storage-impl: s3
-    upload-dir: ./uploads
 
 
 # spring profile for cloud deployment (=cloud) - not used yet

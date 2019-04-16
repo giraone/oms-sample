@@ -4,6 +4,7 @@ import com.giraone.oms.sample.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * A simple REST API for storing and retrieving BLOBs.
+ */
 @RestController
 public class FileObjectController {
 
@@ -32,39 +36,9 @@ public class FileObjectController {
 
     private FileNameMap fileNameMap = URLConnection.getFileNameMap();
 
-    @PostMapping("/mp-upload-filesystem")
-    public UploadFileResponse uploadFileAsMultipart(@RequestParam("filesystem") MultipartFile file) {
-
-        String fileName = storageService.storeMultipartFile(file);
-        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/download-filesystem/").path(fileName).toUriString();
-        return new UploadFileResponse(fileName, fileDownloadUri, file.getContentType(), file.getSize());
-    }
-
-    @PostMapping("/mp-upload-multiple-files")
-    public List<UploadFileResponse> uploadMultipleFilesAsMultipart(@RequestParam("files") MultipartFile[] files) {
-
-        return Arrays.asList(files).stream().map(file -> uploadFileAsMultipart(file)).collect(Collectors.toList());
-    }
-
-    @PostMapping(value = "/files")
-    public ResponseEntity<Void> uploadNewFile(HttpServletRequest request) {
-
-        String fileName = request.getHeader("X-File-Name");
-        long fileSize;
-        try {
-            fileSize = storageService.storeFromStream(request.getInputStream(), request.getContentLengthLong(), fileName);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("File \"%s\" saved with %ld bytes", fileName, fileSize));
-        }
-
-        String location = ServletUriComponentsBuilder.fromCurrentContextPath().path("/files/").path(fileName).toUriString();
-        return ResponseEntity.status(HttpStatus.CREATED).header(HttpHeaders.LOCATION, location).build();
-    }
+    //------------------------------------------------------------------------------------------------------------------
+    //- NON MULTIPART CODE ---------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
 
     @PutMapping(value = "/files/{fileName}")
     public ResponseEntity<Void> uploadFile(@PathVariable String fileName, HttpServletRequest request) {
@@ -78,7 +52,7 @@ public class FileObjectController {
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("File \"%s\" saved with %ld bytes", fileName, fileSize));
+            logger.debug(String.format("File \"%s\" saved with %d bytes", fileName, fileSize));
         }
 
         String location = ServletUriComponentsBuilder.fromCurrentContextPath().path("/files/").path(fileName).toUriString();
@@ -87,29 +61,10 @@ public class FileObjectController {
 
     @GetMapping("/files/{fileName}")
     public void downloadFileAsAttachment(@PathVariable String fileName,
-                                         @RequestParam(name = "as-attachment", defaultValue = "false") boolean asAttachment, HttpServletResponse response) {
+                                         @RequestParam(name = "as-attachment", defaultValue = "false") boolean asAttachment,
+                                         HttpServletResponse response) {
         logger.debug("GET /files/" + fileName);
         this.downloadFile(fileName, response, asAttachment);
-    }
-
-    protected void downloadFile(String fileName, HttpServletResponse response, boolean asAttachment) {
-
-        String contentType = fileNameMap.getContentTypeFor(fileName);
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Guessed content-type for \"%s\" is \"%s\".", fileName, contentType));
-        }
-        response.setContentType(contentType);
-        if (asAttachment) {
-            response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
-        }
-        try {
-            try (OutputStream outputStream = response.getOutputStream()) {
-                storageService.transferToStream(fileName, outputStream);
-            }
-            response.flushBuffer();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @DeleteMapping("/files/{fileName}")
@@ -128,9 +83,56 @@ public class FileObjectController {
             logger.debug(String.format("Guessed content-type for \"%s\" is \"%s\".", fileName, contentType));
         }
 
-        StreamingResponseBody stream = outputStream -> {
-            storageService.transferToStream(fileName, outputStream);
-        };
+        StreamingResponseBody stream = outputStream -> storageService.transferToStream(fileName, outputStream);
         return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, contentType).body(stream);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    //- MULTIPART CODE -------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
+
+    @PostMapping(value = "/mp-file")
+    public ResponseEntity<UploadFileResponse> uploadSingleFileAsMultipart(MultipartFile file) {
+
+        logger.debug("/mp-file " + file.getName());
+        String fileName = storageService.storeMultipartFile(file);
+        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/files/").path(fileName).toUriString();
+        UploadFileResponse result = new UploadFileResponse(fileName, fileDownloadUri, file.getContentType(), file.getSize());
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+
+    }
+
+    @PostMapping(value = "/mp-files")
+    public ResponseEntity<List<UploadFileResponse>> uploadMultipleFilesAsMultipart(MultipartFile[] files) {
+
+        logger.debug("/mp-files #=" + files.length);
+        List<UploadFileResponse> result = Arrays.stream(files)
+                .map(this::uploadSingleFileAsMultipart)
+                .map(HttpEntity::getBody)
+                .collect(Collectors.toList());
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+
+    private void downloadFile(String fileName, HttpServletResponse response, boolean asAttachment) {
+
+        String contentType = fileNameMap.getContentTypeFor(fileName);
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Guessed content-type for \"%s\" is \"%s\".", fileName, contentType));
+        }
+        response.setContentType(contentType);
+        if (asAttachment) {
+            response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
+        }
+        try {
+            try (OutputStream outputStream = response.getOutputStream()) {
+                storageService.transferToStream(fileName, outputStream);
+            }
+            response.flushBuffer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

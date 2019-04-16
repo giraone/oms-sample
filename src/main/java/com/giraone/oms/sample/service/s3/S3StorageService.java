@@ -1,5 +1,6 @@
 package com.giraone.oms.sample.service.s3;
 
+import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.giraone.oms.sample.config.StorageConfiguration;
@@ -111,5 +112,24 @@ public class S3StorageService implements StorageService {
         } else {
             return false;
         }
+    }
+
+    public URL createPreSignedUr(String bucketName, String objectKey, HttpMethod httpMethod, int expireHour) {
+
+        // Set the pre-signed URL to expire after one hour.
+        java.util.Date expiration = new java.util.Date();
+        long expTimeMillis = expiration.getTime();
+        expTimeMillis += 1000 * 60 * 60 * expireHour;
+        expiration.setTime(expTimeMillis);
+
+        // Generate the pre-signed URL.
+        GeneratePresignedUrlRequest generatePresignedUrlRequest =
+                new GeneratePresignedUrlRequest(bucketName, objectKey)
+                        .withMethod(httpMethod)
+                        .withExpiration(expiration);
+        URL url = this.amazonClient.getS3Client().generatePresignedUrl(generatePresignedUrlRequest);
+
+        System.out.println("Pre-Signed URL: " + url.toString());
+        return url;
     }
 }
