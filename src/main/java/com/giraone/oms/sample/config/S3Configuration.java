@@ -14,6 +14,7 @@ public class S3Configuration {
     private static final Logger logger = LoggerFactory.getLogger(S3Configuration.class);
 
     private boolean logConfigurationOnStartup = false;
+    private boolean mock = false;
     private String endpointUrl;
     private String accessKey;
     private String secretKey;
@@ -27,6 +28,14 @@ public class S3Configuration {
         if (this.logConfigurationOnStartup) {
             logger.info("{}", this);
         }
+    }
+
+    public boolean isMock() {
+        return mock;
+    }
+
+    public void setMock(boolean mock) {
+        this.mock = mock;
     }
 
     public String getEndpointUrl() {

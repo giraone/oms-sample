@@ -10,6 +10,7 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -122,6 +123,7 @@ public class FileObjectControllerTest {
         assertThat(tempFile).hasDigest("MD5", TEST_FILE_JPEG_01_MD5);
     }
 
+    @Ignore
     @Test
     public void testThat_multipart_post_multiple_isWorking() throws Exception {
 

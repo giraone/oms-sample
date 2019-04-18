@@ -30,4 +30,16 @@ public class AppConfig {
             throw e;
         }
     }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "app-config.storage.storage-impl", name = "s3Mock")
+    public StorageService getS3MockStorageService() {
+
+        try {
+            return new S3StorageService();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
 }

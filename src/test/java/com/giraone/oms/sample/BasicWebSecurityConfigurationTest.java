@@ -38,7 +38,7 @@ public class BasicWebSecurityConfigurationTest {
 		ResponseEntity<String> response = restTemplate.getForEntity(base.toString(), String.class);
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertTrue(response.getBody().contains("Spring Boot"));
+		assertTrue(response.getBody().contains("S3"));
 	}
 
 	@Test

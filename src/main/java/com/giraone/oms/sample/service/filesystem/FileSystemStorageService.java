@@ -38,7 +38,7 @@ public class FileSystemStorageService implements StorageService {
     @Override
     public void transferToStream(String fileName, OutputStream outputStream) {
 
-        if (!this.isValidFileName(fileName)) {
+        if (!this.isValidPathName(fileName)) {
             throw new StorageException("Sorry! Path contains invalid path sequence " + fileName);
         }
 
@@ -56,19 +56,19 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
-    public long storeFromStream(InputStream inputStream, long contentLength, String fileName) {
+    public long storeFromStream(InputStream inputStream, String contentType, Long contentLength, String path) {
 
-        if (!this.isValidFileName(fileName)) {
-            throw new StorageException("Sorry! Path contains invalid path sequence " + fileName);
+        if (!this.isValidPathName(path)) {
+            throw new StorageException("Sorry! Path contains invalid path sequence " + path);
         }
 
         // Copy filesystem to the target location (Replacing existing filesystem with the same name)
         Path targetLocation;
         try {
-            targetLocation = this.fileStorageLocation.resolve(fileName);
+            targetLocation = this.fileStorageLocation.resolve(path);
             Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
-            throw new StorageException("Error storing filesystem \"" + fileName + "\".", e);
+            throw new StorageException("Error storing stream to path \"" + path + "\".", e);
         }
 
         return targetLocation.toFile().length();
@@ -78,26 +78,33 @@ public class FileSystemStorageService implements StorageService {
     public String storeMultipartFile(MultipartFile file) {
 
         // Normalize filesystem name
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        if (!this.isValidFileName(fileName)) {
-            throw new StorageException("Sorry! Path contains invalid path sequence " + fileName);
+        String path = StringUtils.cleanPath(file.getOriginalFilename());
+        if (!this.isValidPathName(path)) {
+            throw new StorageException("Sorry! Path contains invalid path sequence " + path);
         }
         try (InputStream inputStream = file.getInputStream()) {
-            this.storeFromStream(inputStream, -1, fileName);
-            return fileName;
+            this.storeFromStream(inputStream, file.getContentType(), (long) file.getBytes().length, path);
+            return path;
         } catch (IOException e) {
             throw new StorageException("Error reading multipart filesystem \"" + file.getName() + "\".", e);
         }
     }
 
     @Override
-    public boolean delete(String fileName) {
+    public boolean exists(String path) {
 
-        if (!this.isValidFileName(fileName)) {
-            throw new StorageException("Sorry! Path contains invalid path sequence " + fileName);
+        Path targetLocation = this.fileStorageLocation.resolve(path);
+        return targetLocation.toFile().exists();
+    }
+
+    @Override
+    public boolean delete(String path) {
+
+        if (!this.isValidPathName(path)) {
+            throw new StorageException("Sorry! Path contains invalid path sequence " + path);
         }
 
-        Path targetLocation = this.fileStorageLocation.resolve(fileName);
+        Path targetLocation = this.fileStorageLocation.resolve(path);
         return targetLocation.toFile().delete();
     }
 }

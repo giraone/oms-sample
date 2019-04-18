@@ -43,9 +43,11 @@ public class FileObjectController {
     @PutMapping(value = "/files/{fileName}")
     public ResponseEntity<Void> uploadFile(@PathVariable String fileName, HttpServletRequest request) {
 
+        String contentType = request.getContentType() != null ? request.getContentType() :"application/octet-stream";
         long fileSize;
         try {
-            fileSize = storageService.storeFromStream(request.getInputStream(), request.getContentLengthLong(), fileName);
+            fileSize = storageService.storeFromStream(
+                    request.getInputStream(), contentType, request.getContentLengthLong(), fileName);
         } catch (IOException e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -63,21 +65,22 @@ public class FileObjectController {
     public void downloadFileAsAttachment(@PathVariable String fileName,
                                          @RequestParam(name = "as-attachment", defaultValue = "false") boolean asAttachment,
                                          HttpServletResponse response) {
-        logger.debug("GET /files/" + fileName);
+        logger.debug("GET /files/{}", fileName);
         this.downloadFile(fileName, response, asAttachment);
     }
 
     @DeleteMapping("/files/{fileName}")
     public ResponseEntity<Void> downloadFileAsAttachment(@PathVariable String fileName) {
-        logger.debug("DELETE /files/" + fileName);
+
         boolean ret = storageService.delete(fileName);
+        logger.debug("DELETE /files/{}: ret={}", fileName, ret);
         return ResponseEntity.status(ret ? HttpStatus.NO_CONTENT : HttpStatus.NOT_FOUND).build();
     }
 
     @GetMapping("/files-async/{fileName}")
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String fileName) {
 
-        logger.debug("/download-filesystem-async/" + fileName);
+        logger.debug("/download-filesystem-async/{}", fileName);
         String contentType = fileNameMap.getContentTypeFor(fileName);
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Guessed content-type for \"%s\" is \"%s\".", fileName, contentType));
@@ -106,7 +109,7 @@ public class FileObjectController {
     @PostMapping(value = "/mp-files")
     public ResponseEntity<List<UploadFileResponse>> uploadMultipleFilesAsMultipart(MultipartFile[] files) {
 
-        logger.debug("/mp-files #=" + files.length);
+        logger.debug("/mp-files #={}", files.length);
         List<UploadFileResponse> result = Arrays.stream(files)
                 .map(this::uploadSingleFileAsMultipart)
                 .map(HttpEntity::getBody)
@@ -120,7 +123,7 @@ public class FileObjectController {
 
         String contentType = fileNameMap.getContentTypeFor(fileName);
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Guessed content-type for \"%s\" is \"%s\".", fileName, contentType));
+            logger.debug("Guessed content-type for \"{}\" is \"{}\".", fileName, contentType);
         }
         response.setContentType(contentType);
         if (asAttachment) {

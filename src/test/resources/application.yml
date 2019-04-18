@@ -1,7 +1,7 @@
 logging:
   level:
     org.springframework.web: INFO
-    com.giraone.oms.sample: DEBUG
+    com.giraone.oms.sample: INFO
 
 spring:
   #autoconfigure.exclude=org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration
@@ -17,12 +17,13 @@ spring:
       # Max Request Size
       max-request-size: 215MB
 
-# S3 Connection properties
+# S3 Connection properties (here we use S3Mock on port 9999)
 s3-properties:
+  mock: true
   log-configuration-on-startup: true
-  endpoint-url: http://127.0.0.1:9000
-  access-key: minio
-  secret-key: miniosecret
+  endpoint-url: http://127.0.0.1:9999
+  access-key: "any-key-but-not-null"
+  secret-key: "any-key-but-not-null"
   client-region: default
   bucket-name: bucket-unit-test
   path-style-access-enabled: true
@@ -35,5 +36,5 @@ filesystem-properties:
 app-config:
   storage:
     log-configuration-on-startup: true
-    # Use S3 also for tests
+    # Use S3 for tests (will be mocked)
     storage-impl: s3

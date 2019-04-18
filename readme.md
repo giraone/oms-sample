@@ -16,25 +16,25 @@ The default setup uses a locally install minio without SSL.
 ## CURL tests
 
 ```
-curl -v -s http://localhost:8080/actuator/health
-curl -v -s -u user:user http://localhost:8080/actuator/health
-curl -v -s -u admin:admin http://localhost:8080/actuator/health
+curl -s http://localhost:8080/actuator/health
+curl -s -u user:user http://localhost:8080/actuator/health
+curl -s -u admin:admin http://localhost:8080/actuator/health
 
 # Upload PUT
-curl -v -s -X PUT -u user:user -H "Content-Type: image/jpeg" -d @src/test/resources/testfiles/image-01.jpg http://localhost:8080/files/image-01.jpg
+curl -s -X PUT -u user:user -H "Content-Type: image/jpeg" -d @src/test/resources/testfiles/image-01.jpg http://localhost:8080/files/image-01.jpg
 
 # Multipart Upload
-curl -v -s -X POST -u user:user -F "file=@src/test/resources/testfiles/image-02.jpg" http://localhost:8080/mp-file
-curl -v -s -X POST -u user:user -F "files[]=@readme.md" -F "files[]=@pom.xml" http://localhost:8080/mp-files
+curl -s -X POST -u user:user -F "file=@src/test/resources/testfiles/image-02.jpg" http://localhost:8080/mp-file
+curl -s -X POST -u user:user -F "files[]=@readme.md" -F "files[]=@pom.xml" http://localhost:8080/mp-files
 
 # Download
-curl -v -s -u user:user -o image-01-1.jpg http://localhost:8080/files/image-01.jpg
-curl -v -s -u user:user -o image-01-2.jpg http://localhost:8080/files/image-01.jpg?as-attachment=true
-curl -v -s -u user:user -o image-01-3.jpg http://localhost:8080/files-async/image-01.jpg
+curl -s -u user:user -o image-01-1.jpg http://localhost:8080/files/image-01.jpg
+curl -s -u user:user -o image-01-2.jpg http://localhost:8080/files/image-01.jpg?as-attachment=true
+curl -s -u user:user -o image-01-3.jpg http://localhost:8080/files-async/image-01.jpg
 
 # Delete
-curl -v -s -X DELETE -u user:user http://localhost:8080/files/image-01.jpg
-curl -v -s -X DELETE -u user:user http://localhost:8080/files/image-02.jpg
+curl -s -X DELETE -u user:user http://localhost:8080/files/image-01.jpg
+curl -s -X DELETE -u user:user http://localhost:8080/files/image-02.jpg
 ```
 
 ## Steps to Setup
@@ -53,3 +53,8 @@ You may also package the application in the form of a jar and then run the jar f
 mvn clean package
 java -jar target/upload-sample-1.0.0.jar
 ```
+
+## Open Issues
+
+- Pre-Signed-URL test from browser
+- Cache-Control and Pre-Signed URLs

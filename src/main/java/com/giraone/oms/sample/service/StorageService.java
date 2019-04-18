@@ -11,24 +11,35 @@ import java.nio.file.Path;
 
 public interface StorageService {
 
-    public static final String FILENAME_REGEX = "^[a-zA-Z0-9_. -]+$";
+    String PATH_REGEX = "^[a-zA-Z0-9_.-][a-zA-Z0-9_. -/]*[a-zA-Z0-9]+$";
 
-    public default boolean isValidFileName(String fileName) {
-        return fileName.matches(FILENAME_REGEX);
+    default boolean isValidPathName(String path) {
+        return path.matches(PATH_REGEX);
     }
 
-    public default File copyToTempFile(InputStream inputStream) throws IOException {
+    default File copyToTempFile(InputStream inputStream) throws IOException {
 
-        Path tempFile = Files.createTempFile("stosvc", "");
+        Path tempFile = Files.createTempFile("sto-svc", "");
         Files.copy(inputStream, tempFile);
         return tempFile.toFile();
     }
 
-    public void transferToStream(String path, OutputStream outputStream);
+    void transferToStream(String path, OutputStream outputStream);
 
-    public long storeFromStream(InputStream inputStream, long contentLength, String path);
+    /**
+     * Store the BLOB defined by reading an input stream in S3 using "path" as the object key.
+     * @param inputStream   The input stream to read the content from
+     * @param contentType   The content type of the BLOB
+     * @param contentLength The content length or null, if the content length is unknown by the caller.
+     *                      In this case the content length will be calculated by a reading!
+     * @param path          The object key to be used as the path to the object.
+     * @return the byte length of the content that was stored
+     */
+    long storeFromStream(InputStream inputStream, String contentType, Long contentLength, String path);
 
-    public String storeMultipartFile(MultipartFile file);
+    String storeMultipartFile(MultipartFile file);
 
-    public boolean delete(String path);
+    boolean exists(String path);
+
+    boolean delete(String path);
 }

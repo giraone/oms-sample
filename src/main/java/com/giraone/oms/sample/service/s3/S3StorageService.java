@@ -3,7 +3,6 @@ package com.giraone.oms.sample.service.s3;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
-import com.giraone.oms.sample.config.StorageConfiguration;
 import com.giraone.oms.sample.service.ContentLengthCalculator;
 import com.giraone.oms.sample.service.StorageException;
 import com.giraone.oms.sample.service.StorageService;
@@ -25,9 +24,6 @@ import java.util.Date;
 public class S3StorageService implements StorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(S3StorageService.class);
-
-    @Autowired
-    private StorageConfiguration storageConfiguration;
 
     @Autowired
     private AmazonClient amazonClient;
@@ -61,24 +57,34 @@ public class S3StorageService implements StorageService {
         }
     }
 
+    /**
+     * Store the BLOB defined by reading an input stream in S3 using "path" as the object key.
+     * @param inputStream   The input stream to read the content from
+     * @param contentType   The content type of the BLOB
+     * @param contentLength The content length or null, if the content length is unknown by the caller.
+     *                      In this case the content length will be calculated by a reading!
+     * @param path          The object key to be used as the path to the object.
+     * @return the byte length of the content that was stored
+     */
     @Override
-    public long storeFromStream(InputStream inputStream, long contentLength, String path) {
+    public long storeFromStream(InputStream inputStream, String contentType, Long contentLength, String path) {
 
         ContentLengthCalculator cc = null;
-        if (contentLength < 0) {
-            logger.warn("Must calculate content-length of " + path);
+        if (contentLength == null || contentLength < 0) {
+            logger.warn("Content-length not given! Must calculate content-length of " + path);
             cc = new ContentLengthCalculator(inputStream);
             inputStream = cc.getInputStream();
             contentLength = cc.getContentLength();
         }
 
         try {
-            ObjectMetadata objectMetadata = new ObjectMetadata();
+            final ObjectMetadata objectMetadata = new ObjectMetadata();
             objectMetadata.setContentLength(contentLength);
+            objectMetadata.setContentType(contentType);
             PutObjectRequest request = new PutObjectRequest(this.amazonClient.getBucketName(), path, inputStream, objectMetadata);
             // request.withCannedAcl(CannedAccessControlList.PublicRead);
-            PutObjectResult result = this.amazonClient.getS3Client().putObject(request);
-            return result.getMetadata().getContentLength();
+            this.amazonClient.getS3Client().putObject(request);
+            return objectMetadata.getContentLength();
         } finally {
             if (cc != null) {
                 cc.clean();
@@ -91,15 +97,21 @@ public class S3StorageService implements StorageService {
 
         // Normalize filesystem name
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        if (!this.isValidFileName(fileName)) {
+        if (!this.isValidPathName(fileName)) {
             throw new StorageException("Sorry! Path contains invalid path sequence " + fileName);
         }
         try (InputStream inputStream = file.getInputStream()) {
-            this.storeFromStream(inputStream, -1, fileName);
+            this.storeFromStream(inputStream, file.getContentType(), (long) file.getBytes().length, fileName);
             return fileName;
         } catch (IOException e) {
             throw new StorageException("Error reading multipart filesystem \"" + file.getName() + "\".", e);
         }
+    }
+
+    @Override
+    public boolean exists(String path) {
+
+        return this.amazonClient.getS3Client().doesObjectExist(this.amazonClient.getBucketName(), path);
     }
 
     @Override
@@ -114,22 +126,27 @@ public class S3StorageService implements StorageService {
         }
     }
 
-    public URL createPreSignedUr(String bucketName, String objectKey, HttpMethod httpMethod, int expireHour) {
+    public URL createPreSignedUrl(String bucketName, String objectKey, HttpMethod httpMethod,
+                                  int expireHour, int cacheControlSeconds) {
 
-        // Set the pre-signed URL to expire after one hour.
-        java.util.Date expiration = new java.util.Date();
-        long expTimeMillis = expiration.getTime();
-        expTimeMillis += 1000 * 60 * 60 * expireHour;
+        // Set the pre-signed URL to expire after n hours.
+        final Date expiration = new Date();
+        final long expTimeMillis = expiration.getTime() + 1000 * 60 * 60 * expireHour;
         expiration.setTime(expTimeMillis);
+
+        final ResponseHeaderOverrides responseHeaders = new ResponseHeaderOverrides();
+        if (cacheControlSeconds > 0) {
+            responseHeaders.setCacheControl("max-age=" + cacheControlSeconds);
+        }
 
         // Generate the pre-signed URL.
         GeneratePresignedUrlRequest generatePresignedUrlRequest =
                 new GeneratePresignedUrlRequest(bucketName, objectKey)
                         .withMethod(httpMethod)
+                        .withResponseHeaders(responseHeaders)
                         .withExpiration(expiration);
         URL url = this.amazonClient.getS3Client().generatePresignedUrl(generatePresignedUrlRequest);
-
-        System.out.println("Pre-Signed URL: " + url.toString());
+        logger.debug("S3StorageService.createPreSignedUrl: {} {} {} -> {}", bucketName, objectKey, httpMethod.name(), url.toString());
         return url;
     }
 }
