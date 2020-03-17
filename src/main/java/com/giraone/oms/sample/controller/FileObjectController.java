@@ -1,6 +1,8 @@
 package com.giraone.oms.sample.controller;
 
+import com.amazonaws.HttpMethod;
 import com.giraone.oms.sample.service.StorageService;
+import com.giraone.oms.sample.service.s3.S3StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.FileNameMap;
+import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +46,7 @@ public class FileObjectController {
     @PutMapping(value = "/files/{fileName}")
     public ResponseEntity<Void> uploadFile(@PathVariable String fileName, HttpServletRequest request) {
 
-        String contentType = request.getContentType() != null ? request.getContentType() :"application/octet-stream";
+        String contentType = request.getContentType() != null ? request.getContentType() : "application/octet-stream";
         long fileSize;
         try {
             fileSize = storageService.storeFromStream(
@@ -115,6 +118,21 @@ public class FileObjectController {
                 .map(HttpEntity::getBody)
                 .collect(Collectors.toList());
         return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    //- PRE-SIGNED CODE ------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
+
+    @GetMapping("/pre-signed/{fileName}")
+    public ResponseEntity<String> getPreSignedUrl(@PathVariable String fileName, @RequestParam String method) {
+
+        logger.debug("/pre-signed/{}", fileName);
+
+        S3StorageService s = (S3StorageService) this.storageService;
+        URL url = s.createPreSignedUrl(fileName, "PUT".equalsIgnoreCase(method) ? HttpMethod.PUT : HttpMethod.POST, 1, 0);
+
+        return ResponseEntity.ok(url.toExternalForm());
     }
 
     //------------------------------------------------------------------------------------------------------------------

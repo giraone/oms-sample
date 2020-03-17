@@ -10,11 +10,9 @@ var multipleFileUploadInput = document.querySelector('#multipleFileUploadInput')
 var multipleFileUploadError = document.querySelector('#multipleFileUploadError');
 var multipleFileUploadSuccess = document.querySelector('#multipleFileUploadSuccess');
 
-function uploadSingleFileWithPut (file) {
+function uploadSingleFileWithTarget(file, method, url, withCredentials) {
 
-  var fileInput = document.getElementById('singleFileUploadInputAsPut');
   var fileReader = new FileReader();
-  var file = fileInput.files[0];
   var contentType;
   if (file.type == '') {
     contentType = 'application/octet-stream';
@@ -25,8 +23,8 @@ function uploadSingleFileWithPut (file) {
 
   fileReader.onload = function(e) {
     var xhr = new XMLHttpRequest();
-    xhr.withCredentials = true;
-    xhr.open("PUT", "/files/" + file.name);
+    xhr.withCredentials = withCredentials;
+    xhr.open(method, url);
     xhr.setRequestHeader("Content-Type", contentType);
 
     xhr.onload = function() {
@@ -45,13 +43,67 @@ function uploadSingleFileWithPut (file) {
   }
 }
 
-function uploadSingleFileAsFormData(file) {
+function uploadSingleFileWithPut() {
+
+  var fileInput = document.getElementById('singleFileUploadWithReader');
+  var file = fileInput.files[0];
+  uploadSingleFileWithTarget(file, "PUT", "/files/" + file.name, true);
+}
+
+function uploadSingleFileWithPreSignedPut(file) {
+
+  var fileInput = document.getElementById('singleFileUploadWithReader');
+  var file = fileInput.files[0];
+
+  var xhr = new XMLHttpRequest();
+  xhr.withCredentials = true;
+  xhr.open("GET", "/pre-signed/" + file.name + "?method=PUT");
+  xhr.onload = function() {
+      uploadSingleFileWithTarget(file, "PUT", xhr.responseText, false);
+  }
+  xhr.send();
+}
+
+function uploadSingleFileWithPreSignedPost(file) {
+
+  var fileInput = document.getElementById('singleFileUploadWithReader');
+  var file = fileInput.files[0];
   var formData = new FormData();
   formData.append("file", file);
 
   var xhr = new XMLHttpRequest();
   xhr.withCredentials = true;
-  xhr.open("POST", "/mp-file");
+  xhr.open("GET", "/pre-signed/" + file.name + "?method=POST");
+  xhr.onload = function() {
+      uploadSingleFileWithTarget(file, "POST", xhr.responseText, false);
+  }
+  xhr.send();
+}
+
+function uploadSingleFileWithPreSignedMultipart(file) {
+
+  var fileInput = document.getElementById('singleFileUploadWithReader');
+  var file = fileInput.files[0];
+  var formData = new FormData();
+  formData.append("file", file);
+
+  var xhr = new XMLHttpRequest();
+  xhr.withCredentials = true;
+  xhr.open("GET", "/pre-signed/" + file.name + "?method=POST");
+  xhr.onload = function() {
+      console.log(xhr.responseText);
+      uploadSingleFileAsFormData(file, xhr.responseText);
+  }
+  xhr.send();
+}
+
+function uploadSingleFileAsFormData(file, url) {
+  var formData = new FormData();
+  formData.append("file", file);
+
+  var xhr = new XMLHttpRequest();
+  xhr.withCredentials = true;
+  xhr.open("POST", url);
 
   xhr.onload = function() {
     console.log(xhr.responseText);
@@ -70,7 +122,7 @@ function uploadSingleFileAsFormData(file) {
   xhr.send(formData);
 }
 
-function uploadMultipleFilesAsFormData(files) {
+function uploadMultipleFilesAsFormData(files, url) {
   var formData = new FormData();
   for (var index = 0; index < files.length; index++) {
     formData.append("files", files[index]);
@@ -78,7 +130,7 @@ function uploadMultipleFilesAsFormData(files) {
 
   var xhr = new XMLHttpRequest();
   xhr.withCredentials = true;
-  xhr.open("POST", "/mp-files");
+  xhr.open("POST", url);
 
   xhr.onload = function() {
     console.log(xhr.responseText);
@@ -107,7 +159,7 @@ singleUploadForm.addEventListener('submit', function(event) {
     singleFileUploadError.innerHTML = "Please select a file";
     singleFileUploadError.style.display = "block";
   }
-  uploadSingleFileAsFormData(files[0]);
+  uploadSingleFileAsFormData(files[0], "/mp-file");
   event.preventDefault();
 }, true);
 
@@ -117,6 +169,6 @@ multipleUploadForm.addEventListener('submit', function(event) {
     multipleFileUploadError.innerHTML = "Please select at least one file";
     multipleFileUploadError.style.display = "block";
   }
-  uploadMultipleFilesAsFormData(files);
+  uploadMultipleFilesAsFormData(files, "/mp-files");
   event.preventDefault();
 }, true);

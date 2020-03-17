@@ -126,9 +126,10 @@ public class S3StorageService implements StorageService {
         }
     }
 
-    public URL createPreSignedUrl(String bucketName, String objectKey, HttpMethod httpMethod,
+    public URL createPreSignedUrl(String objectKey, HttpMethod httpMethod,
                                   int expireHour, int cacheControlSeconds) {
 
+        final String bucketName = amazonClient.getBucketName();
         // Set the pre-signed URL to expire after n hours.
         final Date expiration = new Date();
         final long expTimeMillis = expiration.getTime() + 1000 * 60 * 60 * expireHour;

@@ -111,15 +111,14 @@ public class S3StorageServiceTest {
     public void testThat_createPreSignedUrl_works() {
 
         // arrange
-        String bucketName = "bucket-01";
         String objectKey = "path1/path2/" + UUID.randomUUID();
         HttpMethod httpMethod = HttpMethod.GET;
         int expireHour = 1;
         int cacheControlSeconds = 60 * 5;
 
         // act
-        URL url = s3StorageService.createPreSignedUrl(bucketName, objectKey, httpMethod, expireHour, cacheControlSeconds);
-        System.out.println(bucketName + "/" + objectKey + " -> \"" + url.toExternalForm() + "\"");
+        URL url = s3StorageService.createPreSignedUrl(objectKey, httpMethod, expireHour, cacheControlSeconds);
+        System.out.println(objectKey + " -> \"" + url.toExternalForm() + "\"");
 
         // assert
         assertThat(url).isNotNull();
@@ -132,7 +131,6 @@ public class S3StorageServiceTest {
 
         // arrange
         int repetitions = 1000;
-        String bucketName = "bucket-01";
         HttpMethod httpMethod = HttpMethod.GET;
         int expireHour = 1;
         int cacheControlSeconds = 60 * 5;
@@ -143,7 +141,7 @@ public class S3StorageServiceTest {
         // act
         long start = System.currentTimeMillis();
         for (String objectKey : objectKeys) {
-            URL url = s3StorageService.createPreSignedUrl(bucketName, objectKey, httpMethod, expireHour, cacheControlSeconds);
+            URL url = s3StorageService.createPreSignedUrl(objectKey, httpMethod, expireHour, cacheControlSeconds);
         }
         long end = System.currentTimeMillis();
         long duration = end - start;

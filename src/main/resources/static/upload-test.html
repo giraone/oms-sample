@@ -17,8 +17,13 @@
 		<div class="upload-content">
 			<div class="single-upload">
 				<h3>Upload Single File as PUT</h3>
-				<input id="singleFileUploadInputAsPut" type="file" class="file-input" required />
+				<input id="singleFileUploadWithReader" type="file" class="file-input" required />
+				<br />
 				<button type="button" class="primary submit-btn" onclick="uploadSingleFileWithPut()">Submit</button>
+				<button type="button" class="primary submit-btn" onclick="uploadSingleFileWithPreSignedPut()">PreSigned PUT</button>
+				<button type="button" class="primary submit-btn" onclick="uploadSingleFileWithPreSignedPost()">PreSigned POST</button>
+				<button type="button" class="primary submit-btn" onclick="uploadSingleFileWithPreSignedMultipart()">PreSigned Multipart</button>
+				<br />
 				<div class="upload-response">
 					<div id="singleFilePutUploadError"></div>
 					<div id="singleFilePutUploadSuccess"></div>
